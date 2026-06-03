@@ -413,8 +413,8 @@ Where $W_{ij} = P_{ij}(1 - P_{ij})$ is the variance.
 
 ## 👥 Tác giả / Author
 *   **Bùi Thành Ninh**
-    *   **Tiếng Việt**: Hiện đang công tác tại **Trường Đại học Y Hà Nội**, có hơn 10 năm kinh nghiệm chuyên sâu trong lĩnh vực khảo thí, tốt nghiệp Thạc sĩ chuyên ngành **Đo lường và Đánh giá trong Giáo dục**.
-    *   **English**: Currently working at **Hanoi Medical University** with over 10 years of professional experience in educational testing, graduated with a Master's degree in **Educational Measurement and Evaluation**.
+    *   **Tiếng Việt**: Hiện đang công tác tại **Trường Đại học Y Hà Nội**, có hơn 10 năm kinh nghiệm chuyên sâu trong lĩnh vực khảo thí.
+    *   **English**: Currently working at **Hanoi Medical University** with over 10 years of professional experience in educational testing.
 
 ---
 

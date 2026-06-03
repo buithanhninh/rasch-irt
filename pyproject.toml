@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rasch-irt"
-version = "1.0.0"
+version = "1.1.0"
 authors = [
     { name = "Bùi Thành Ninh", email = "buithanhninh@gmail.com" }
 ]
-description = "Thư viện Python chuyên nghiệp phân tích chất lượng đề thi trắc nghiệm theo CTT và mô hình IRT 1PL, 2PL, 3PL (JMLE)."
+description = "Thư viện Python chuyên nghiệp phân tích chất lượng đề thi trắc nghiệm theo CTT và mô hình IRT 1PL (JMLE), 2PL/3PL (MML-EM). Đã kiểm chứng vs R psych + ltm."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -33,3 +33,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["rasch_irt*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

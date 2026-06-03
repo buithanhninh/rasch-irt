@@ -20,6 +20,11 @@ from .ctt import (
     run_ctt,
 )
 
+from .mml_em import (
+    MMLConfig,
+    run_mml_em,
+)
+
 from .irt import (
     JMLEConfig,
     JMLEResult,
@@ -43,7 +48,7 @@ from .irt import (
     compute_theta_density,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Bùi Thành Ninh"
 
 __all__ = [
@@ -61,7 +66,11 @@ __all__ = [
     "CttResult",
     "run_ctt",
     
-    # IRT
+    # IRT — MML-EM (2PL/3PL)
+    "MMLConfig",
+    "run_mml_em",
+    
+    # IRT — JMLE (1PL) & Unified API
     "JMLEConfig",
     "JMLEResult",
     "IrtItemResult",

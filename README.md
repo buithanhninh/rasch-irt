@@ -35,7 +35,7 @@
 
 ## 🇻🇳 TIẾNG VIỆT
 
-`rasch-irt` là một thư viện Python chuyên nghiệp, tối ưu hóa thuật toán phục vụ việc phân tích đánh giá chất lượng câu hỏi thi trắc nghiệm và năng lực thí sinh. Thư viện tích hợp đầy đủ hai cột trụ chính của khoa học đo lường giáo dục: **Lý thuyết Khảo thí Cổ điển (Classical Test Theory - CTT)** và **Lý thuyết Ứng đáp Câu hỏi (Item Response Theory - IRT)** với các mô hình 1PL (Rasch), 2PL, và 3PL sử dụng động cơ ước lượng tối ưu **JMLE (Joint Maximum Likelihood Estimation)** Newton-Raphson.
+`rasch-irt` là một thư viện Python chuyên nghiệp, tối ưu hóa thuật toán phục vụ việc phân tích đánh giá chất lượng câu hỏi thi trắc nghiệm và năng lực thí sinh. Thư viện tích hợp đầy đủ hai cột trụ chính của khoa học đo lường giáo dục: **Lý thuyết Khảo thí Cổ điển (Classical Test Theory - CTT)** và **Lý thuyết Ứng đáp Câu hỏi (Item Response Theory - IRT)** với các mô hình 1PL (Rasch) sử dụng **JMLE (Joint Maximum Likelihood Estimation)** và mô hình 2PL/3PL sử dụng thuật toán **MML-EM (Marginal Maximum Likelihood via Expectation-Maximization)** chuẩn ngành.
 
 ### 🌟 Tính năng nổi bật
 
@@ -77,22 +77,22 @@ flowchart TD
     end
 
     subgraph G3["GIAI ĐOẠN 3: PHÂN TÍCH HIỆN ĐẠI (IRT)"]
-        Init["Khởi tạo tham số ban đầu <br> - theta: Chuẩn hóa điểm thô <br> - b: Logit của p <br> - a = 1.0 <br> - c = 1 / num_options"]
+        Init["Khởi tạo tham số ban đầu <br> - b: Logit của p <br> - a = 1.0 <br> - c = 1 / num_options"]
         
-        subgraph JMLE["Vòng lặp JMLE (Joint Maximum Likelihood)"]
-            Estep["E-STEP: Ước lượng theta <br> Newton-Raphson (max 50 vòng) <br> + Ràng buộc Chuẩn hóa (Mean=0, SD=1)"]
-            Mstep["M-STEP: Ước lượng (a, b, c) <br> Newton-Raphson (max 5 vòng) <br> - 1PL: Khóa a=1, c=0 <br> - 2PL: Khóa c=0 <br> - 3PL: Ước lượng a, b, c + Beta Prior"]
-            Conv{"Hội tụ? <br> max(|theta - theta_old|) < tol"}
+        subgraph Engine["Động cơ ước lượng (Estimation Engine)"]
+            ModelCheck{"Loại mô hình?"}
+            JMLE["Vòng lặp JMLE (1PL/Rasch) <br> Ước lượng đồng thời theta & b <br> chuẩn hóa Mean=0"]
+            MMLEM["Vòng lặp MML-EM (2PL/3PL) <br> E-Step: expected stats via GH quadrature <br> M-Step: Newton-Raphson cho item parameters <br> Post-hoc: EAP scoring cho theta"]
             
-            Estep --> Mstep --> Conv
-            Conv -- "Không" --> Estep
+            ModelCheck -- "1PL" --> JMLE
+            ModelCheck -- "2PL/3PL" --> MMLEM
         end
         
         Post["HẬU XỬ LÝ (Post-Processing) <br> - Tính Infit / Outfit MNSQ <br> - Tính sai số chuẩn SE <br> - Quy đổi điểm thực True Score (thang 10)"]
         Output["KẾT QUẢ CUỐI CÙNG <br> (theta, a, b, c, SE, MNSQ, True Score)"]
         
-        IrtU --> Init --> Estep
-        Conv -- "Có" --> Post --> Output
+        IrtU --> Init --> ModelCheck
+        JMLE & MMLEM --> Post --> Output
     end
 ```
 
@@ -154,17 +154,17 @@ print("Các câu hỏi chất lượng kém đề xuất loại bỏ:", ctt_resu
 ```
 
 #### Bước C: Ước lượng mô hình IRT 1PL / 2PL / 3PL (`run_irt`)
-Sử dụng thuật toán **JMLE Newton-Raphson** để tính toán năng lực thí sinh và tham số câu hỏi:
+Tự động định tuyến thuật toán tối ưu: Mô hình 1PL (Rasch) sử dụng động cơ **JMLE Newton-Raphson**, mô hình 2PL/3PL sử dụng động cơ **MML-EM** tích hợp Gauss-Hermite quadrature và EAP scoring:
 
 ```python
 from rasch_irt import run_irt, JMLEConfig
 
 # Cấu hình ước lượng mô hình 3PL cho đề thi 4 phương án
 config = JMLEConfig(
-    model_type=3,       # 1 = 1PL (Rasch), 2 = 2PL, 3 = 3PL
+    model_type=3,       # 1 = 1PL (Rasch) [JMLE], 2 = 2PL [MML], 3 = 3PL [MML]
     num_options=4,      # Số phương án để tính Beta Prior cho tham số đoán mò c
     max_iter=100,       # Số vòng lặp tối đa
-    tol=0.001           # Sai số epsilon hội tụ
+    tol=0.001           # Ngưỡng hội tụ
 )
 
 # Loại trừ các câu hỏi thô bị lỗi tính toán (D < 0 hoặc point-biserial tương quan âm)
@@ -219,7 +219,7 @@ Trong đó $W_{ij} = P_{ij}(1 - P_{ij})$ là phương sai kỳ vọng.
 
 ## 🇬🇧 ENGLISH
 
-`rasch-irt` is a professional Python library designed for psychometric test analysis and person ability evaluation. The library integrates both foundational pillars of educational measurement: **Classical Test Theory (CTT)** and **Item Response Theory (IRT)** with 1PL (Rasch), 2PL, and 3PL models estimated via an optimized **JMLE (Joint Maximum Likelihood Estimation)** Newton-Raphson engine.
+`rasch-irt` is a professional Python library designed for psychometric test analysis and person ability evaluation. The library integrates both foundational pillars of educational measurement: **Classical Test Theory (CTT)** and **Item Response Theory (IRT)** with 1PL (Rasch) estimated via an optimized **JMLE (Joint Maximum Likelihood Estimation)** engine and 2PL/3PL models estimated via industry-standard **MML-EM (Marginal Maximum Likelihood via Expectation-Maximization)**.
 
 ### 🌟 Key Features
 
@@ -261,22 +261,22 @@ flowchart TD
     end
 
     subgraph G3["STAGE 3: ITEM RESPONSE THEORY (IRT)"]
-        Init["Parameter Initialization <br> - theta: Standardized raw score <br> - b: Logit of difficulty p <br> - a = 1.0 <br> - c = 1 / num_options"]
+        Init["Parameter Initialization <br> - b: Logit of difficulty p <br> - a = 1.0 <br> - c = 1 / num_options"]
         
-        subgraph JMLE["JMLE Estimation Loop"]
-            Estep["E-STEP: Estimate Theta <br> Newton-Raphson (max 50 loops) <br> + Standardization (Mean=0, SD=1)"]
-            Mstep["M-STEP: Estimate (a, b, c) <br> Newton-Raphson (max 5 loops) <br> - 1PL: Fix a=1, c=0 <br> - 2PL: Fix c=0 <br> - 3PL: Estimate a, b, c + Beta Prior"]
-            Conv{"Converged? <br> max(|theta - theta_old|) < tol"}
+        subgraph Engine["Estimation Engine"]
+            ModelCheck{"Model Type?"}
+            JMLE["JMLE Loop (1PL/Rasch) <br> Jointly estimate theta & b <br> + Mean standardization"]
+            MMLEM["MML-EM Loop (2PL/3PL) <br> E-Step: Expected stats via GH quadrature <br> M-Step: Newton-Raphson for item params <br> Post-hoc: EAP scoring for theta"]
             
-            Estep --> Mstep --> Conv
-            Conv -- "No" --> Estep
+            ModelCheck -- "1PL" --> JMLE
+            ModelCheck -- "2PL/3PL" --> MMLEM
         end
         
         Post["Post-Processing <br> - Infit / Outfit MNSQ <br> - Standard Error SE <br> - True Score Conversion (Scale 0-10)"]
         Output["FINAL CALIBRATION <br> (theta, a, b, c, SE, MNSQ, True Score)"]
         
-        IrtU --> Init --> Estep
-        Conv -- "Yes" --> Post --> Output
+        IrtU --> Init --> ModelCheck
+        JMLE & MMLEM --> Post --> Output
     end
 ```
 
@@ -338,16 +338,16 @@ print("Flagged items suggested for exclusion:", ctt_result.bad_items)
 ```
 
 #### Step C: Item Response Theory (`run_irt`)
-Performs Joint Maximum Likelihood Estimation (JMLE) with Newton-Raphson updates:
+Routes to the optimal estimation algorithm: 1PL (Rasch) via **JMLE Newton-Raphson**, and 2PL/3PL models via **MML-EM** with Gauss-Hermite quadrature and EAP scoring:
 
 ```python
 from rasch_irt import run_irt, JMLEConfig
 
 # Set up 3PL model configuration for 4-option items
 config = JMLEConfig(
-    model_type=3,       # 1 = 1PL (Rasch), 2 = 2PL, 3 = 3PL
+    model_type=3,       # 1 = 1PL (Rasch) [JMLE], 2 = 2PL [MML], 3 = 3PL [MML]
     num_options=4,      # Used for calculating Beta Prior for guessing parameter c
-    max_iter=100,       # Maximum number of JMLE iterations
+    max_iter=100,       # Maximum number of iterations
     tol=0.001           # Convergence threshold
 )
 

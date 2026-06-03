@@ -31,12 +31,26 @@ from .exceptions import InvalidMatrixError, ConvergenceError
 
 @dataclass
 class JMLEConfig:
-    """Cấu hình cho thuật toán hiệu chỉnh JMLE"""
+    """Cấu hình cho thuật toán ước lượng IRT.
+
+    - 1PL (Rasch): Sử dụng JMLE Newton-Raphson (đã xác nhận chính xác vs R ltm)
+    - 2PL/3PL: Tự động sử dụng MML-EM (Marginal Maximum Likelihood)
+      để tránh Neyman-Scott inconsistency bias.
+
+    Attributes:
+        model_type: 1 = 1PL (Rasch), 2 = 2PL, 3 = 3PL
+        num_options: Số phương án lựa chọn (dùng cho Beta Prior c trong 3PL)
+        max_iter: Số vòng lặp tối đa (MML-EM tự động tăng lên 500)
+        tol: Ngưỡng hội tụ
+        epsilon: Alias cho tol (backward compatibility)
+        num_quadrature: Số điểm Gauss-Hermite quadrature cho MML-EM (mặc định 21)
+    """
     model_type: int = 3           # 1 = 1PL (Rasch), 2 = 2PL, 3 = 3PL
     num_options: int = 4          # Số phương án lựa chọn (để tính Beta Prior)
     max_iter: int = 100           # Số vòng lặp tối đa
     tol: float = 0.001            # Ngưỡng hội tụ (max_change < tol)
     epsilon: float = 0.001        # Đồng bộ ngược với phiên bản cũ
+    num_quadrature: int = 21      # Số điểm GH quadrature (chỉ dùng cho 2PL/3PL MML-EM)
 
 
 @dataclass
@@ -220,8 +234,18 @@ def compute_log_likelihood(U: np.ndarray, P: np.ndarray) -> float:
     return float(ll)
 
 
-def _count_params(N: int, M: int, model_type: int) -> int:
-    """Đếm số lượng tham số tự do"""
+def _count_params(N: int, M: int, model_type: int, method: str = "jmle") -> int:
+    """Đếm số lượng tham số tự do.
+
+    MML không tính θ vì đã integrate out.
+    JMLE tính cả θ trong số tham số.
+    """
+    if method == "mml":
+        if model_type == 2:
+            return 2 * N
+        else:
+            return 3 * N
+    # JMLE
     if model_type == 1:
         return N + M - 1
     elif model_type == 2:
@@ -243,8 +267,27 @@ def _compute_aic_bic(ll: float, num_params: int, M: int) -> tuple[float, float]:
 
 def run_jmle(U: np.ndarray, config: JMLEConfig) -> JMLEResult:
     """
-    Ước lượng JMLE Newton-Raphson đồng thời cho các tham số câu hỏi và thí sinh.
+    Ước lượng tham số IRT.
+
+    - 1PL: JMLE Newton-Raphson (ước lượng đồng thời θ và b)
+    - 2PL/3PL: MML-EM (tích phân θ ra, ước lượng item params bằng EM,
+      sau đó EAP scoring cho θ)
+
+    API không thay đổi — caller code không cần sửa.
     """
+    # 2PL/3PL: Delegate sang MML-EM để tránh JMLE bias
+    if config.model_type >= 2:
+        from .mml_em import run_mml_em, MMLConfig
+        mml_config = MMLConfig(
+            model_type=config.model_type,
+            num_options=config.num_options,
+            max_iter=max(config.max_iter * 5, 500),
+            tol=min(config.tol, config.epsilon),
+            num_quadrature=config.num_quadrature,
+        )
+        return run_mml_em(U, mml_config)
+
+    # 1PL: Giữ nguyên JMLE (đã xác nhận chính xác vs R ltm)
     N, M = U.shape
     theta, a, b, c = initialize_parameters(U, config.model_type, config.num_options)
     
@@ -273,7 +316,8 @@ def run_jmle(U: np.ndarray, config: JMLEConfig) -> JMLEResult:
             if np.max(np.abs(deltas)) < convergence_tol:
                 break
         
-        # Chuẩn hóa để tránh trôi dạt tham số
+        # Chuẩn hóa thang đo để tránh trôi dạt tham số (location & scale indeterminacy)
+        # Biến đổi: θ'=(θ-μ)/σ, b'=(b-μ)/σ, a'=a*σ giữ bất biến P(θ)=f(a*(θ-b))
         mean_theta = theta.mean()
         if config.model_type == 1:
             theta = theta - mean_theta
@@ -284,6 +328,9 @@ def run_jmle(U: np.ndarray, config: JMLEConfig) -> JMLEResult:
                 theta = (theta - mean_theta) / std_theta
                 b = (b - mean_theta) / std_theta
                 a = a * std_theta
+            else:
+                theta = theta - mean_theta
+                b = b - mean_theta
         
         # 2. M-STEP: Ước lượng tham số câu hỏi (b, a, c)
         for _inner in range(MAX_INNER_ITEM):

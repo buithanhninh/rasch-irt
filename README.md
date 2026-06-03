@@ -102,7 +102,12 @@ flowchart TD
 
 Thư viện yêu cầu **Python >= 3.9** cùng với `numpy` và `scipy`.
 
-#### Cài đặt trực tiếp từ GitHub (Khuyên dùng):
+#### Cài đặt từ PyPI (Khuyên dùng):
+```bash
+pip install rasch-irt
+```
+
+#### Cài đặt trực tiếp từ GitHub (Bản mới nhất đang phát triển):
 ```bash
 pip install git+https://github.com/buithanhninh/rasch-irt.git
 ```
@@ -286,7 +291,12 @@ flowchart TD
 
 The library requires **Python >= 3.9** along with `numpy` and `scipy`.
 
-#### Install directly from GitHub (Recommended):
+#### Install from PyPI (Recommended):
+```bash
+pip install rasch-irt
+```
+
+#### Install directly from GitHub (Bleeding edge):
 ```bash
 pip install git+https://github.com/buithanhninh/rasch-irt.git
 ```

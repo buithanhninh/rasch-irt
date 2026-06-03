@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rasch-irt"
+version = "1.0.0"
+authors = [
+    { name = "Bùi Thành Ninh", email = "buithanhninh@gmail.com" }
+]
+description = "Thư viện Python chuyên nghiệp phân tích chất lượng đề thi trắc nghiệm theo CTT và mô hình IRT 1PL, 2PL, 3PL (JMLE)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research"
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rasch_irt*"]

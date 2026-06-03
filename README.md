@@ -100,9 +100,17 @@ flowchart TD
 
 ### 📦 1. Cài đặt (Installation)
 
-Thư viện yêu cầu **Python >= 3.9** cùng với `numpy` và `scipy`. Bạn có thể cài đặt trực tiếp từ mã nguồn:
+Thư viện yêu cầu **Python >= 3.9** cùng với `numpy` và `scipy`.
 
+#### Cài đặt trực tiếp từ GitHub (Khuyên dùng):
 ```bash
+pip install git+https://github.com/buithanhninh/rasch-irt.git
+```
+
+#### Cài đặt từ mã nguồn cục bộ (Dành cho nhà phát triển):
+```bash
+git clone https://github.com/buithanhninh/rasch-irt.git
+cd rasch-irt
 pip install .
 ```
 
@@ -276,9 +284,17 @@ flowchart TD
 
 ### 📦 1. Installation
 
-The library requires **Python >= 3.9** along with `numpy` and `scipy`. Install it directly from source:
+The library requires **Python >= 3.9** along with `numpy` and `scipy`.
 
+#### Install directly from GitHub (Recommended):
 ```bash
+pip install git+https://github.com/buithanhninh/rasch-irt.git
+```
+
+#### Install from local source (For developers):
+```bash
+git clone https://github.com/buithanhninh/rasch-irt.git
+cd rasch-irt
 pip install .
 ```
 
